@@ -1,3 +1,4 @@
 module.exports = {
-  ...require("../prettier.config")
+  printWidth: 100,
+  arrowParens: "always"
 };
