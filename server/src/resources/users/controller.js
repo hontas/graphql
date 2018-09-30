@@ -1,25 +1,19 @@
 import uuidv4 from "uuid/v4";
+import { generatePasswordHash } from "../../lib/auth";
 
-let users = {
-  1: {
-    username: "hontas",
-    fullName: "Pontus Lundin",
-    email: "lundin.pontus@gmail.com",
-    messageIds: [1],
-    createdAt: Date.now()
-  },
-  2: {
-    username: "TobLu",
-    fullName: "Tobias Lundin",
-    email: "lundin.tobias@gmail.com",
-    messageIds: [2],
-    createdAt: Date.now()
-  }
-};
+const users = {};
 
-function createUser({ username, email, fullName }) {
+async function createUser({ username, email, fullName, password }) {
   const id = uuidv4();
-  users[id] = { username, email, fullName, createdAt: Date.now() };
+  const passwordHash = await generatePasswordHash(password);
+  users[id] = {
+    username,
+    email,
+    password: passwordHash,
+    fullName,
+    createdAt: Date.now(),
+    messageIds: []
+  };
   return getUser(id);
 }
 
@@ -33,10 +27,10 @@ function deletedMessage({ userId, messageId }) {
 }
 
 function getUser(id) {
-  return {
+  return users[id] ? {
     id,
     ...users[id]
-  };
+  } : null;
 }
 
 function getUsers() {

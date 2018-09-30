@@ -5,6 +5,9 @@ import { ApolloServer } from "apollo-server-express";
 
 import schema from "./schema";
 import resolvers from "./resolvers";
+import generateData from "./resources/generateData";
+
+generateData();
 
 const app = express();
 app.use(helmet());

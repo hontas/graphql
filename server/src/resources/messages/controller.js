@@ -1,21 +1,11 @@
 import uuidv4 from "uuid/v4";
 
-let messages = {
-  1: {
-    text: "Hej tobbe",
-    userId: 1
-  },
-  2: {
-    text: "tjiena hontas",
-    userId: 2,
-    inResponseTo: "1"
-  }
-};
+const messages = {};
 
 function createMessage({ text, userId, inResponseTo }) {
   const id = uuidv4();
   const inResponseToMsg = inResponseTo && getMessage(inResponseTo);
-  const responseId = inResponseToMsg ? inResponseToMsg.inResponseTo : inResponseTo;
+  const responseId = inResponseToMsg && inResponseToMsg.inResponseTo || inResponseTo;
   messages[id] = {
     text,
     userId,
