@@ -14,7 +14,14 @@ let messages = {
 
 function createMessage({ text, userId, inResponseTo }) {
   const id = uuidv4();
-  messages[id] = { text, userId, inResponseTo, createdAt: Date.now() };
+  const inResponseToMsg = inResponseTo && getMessage(inResponseTo);
+  const responseId = inResponseToMsg ? inResponseToMsg.inResponseTo : inResponseTo;
+  messages[id] = {
+    text,
+    userId,
+    inResponseTo: responseId,
+    createdAt: Date.now()
+  };
   return getMessage(id);
 }
 

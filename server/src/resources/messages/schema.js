@@ -17,5 +17,7 @@ export default gql`
     user: User!
     text: String!
     responses: [Message!]!
+    createdAt: String!
+    updatedAt: String
   }
 `;

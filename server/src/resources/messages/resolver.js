@@ -11,6 +11,9 @@ export default {
 
   Mutation: {
     createMessage(parent, { text, userId, inResponseTo }) {
+      if (!userId || !users.getUser(userId)) {
+        throw new UserInputError("No user specified", { invalidArgs: "userId" });
+      }
       const newMessage = messages.createMessage({ text, userId, inResponseTo });
       users.createdMessage({ userId, messageId: newMessage.id });
       return newMessage;
@@ -23,6 +26,7 @@ export default {
       }
     },
     deleteMessage(parent, { id }) {
+      if (!messages.getMessage(id)) return true;
       const { userId } = messages.getMessage(id);
       return messages.deleteMessage(id) && users.deletedMessage({ userId, messageId: id });
     }

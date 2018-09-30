@@ -20,5 +20,7 @@ export default gql`
     username: String!
     email: String!
     messages: [Message!]!
+    createdAt: String!
+    updatedAt: String
   }
 `;
