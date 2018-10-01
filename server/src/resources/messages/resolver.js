@@ -47,8 +47,9 @@ export default {
       isAuthenticated,
       isOwner,
       (parent, { id }) => {
-        if (!messages.getMessage(id)) return true;
-        const { userId } = messages.getMessage(id);
+        const msgToDelete = messages.getMessage(id);
+        if (!msgToDelete) return true;
+        const { userId } = msgToDelete;
         return messages.deleteMessage(id) && users.deletedMessage({ userId, messageId: id });
       }
     )

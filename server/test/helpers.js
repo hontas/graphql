@@ -1,4 +1,5 @@
 const request = require('request-promise');
+const queries = require('../../common/queries');
 const baseUrl = process.env.BASE_URL || 'http://localhost:8000';
 
 const baseUser = {
@@ -24,35 +25,23 @@ const makeReq = (query, variables = {}, headers = {}) =>
   });
 
 function createUser(user = baseUser) {
-  const query = `
-    mutation ($email: String!, $username: String!, $password: String!, $fullName: String) {
-      createUser(email: $email, username: $username, password: $password, fullName: $fullName) {
-        id
-        token
-      }
-    }`;
+  return makeReq(queries.createUser, user);
+}
 
-  return makeReq(query, user);
+function createMessage(variables, token) {
+  return makeReq(queries.createMessage, variables, getAuthHeader(token));
+}
+
+function deleteMessage(id, token) {
+  return makeReq(queries.deleteMessage, { id }, getAuthHeader(token));
 }
 
 function signIn(user = baseUser) {
-  const query = `
-    mutation ($email: String!, $password: String!) {
-      signIn(email: $email, password: $password) {
-        token
-      }
-    }`;
-
-  return makeReq(query, user);
+  return makeReq(queries.signIn, user);
 }
 
 function deleteUser(id, token) {
-  const query = `
-    mutation ($id: ID!) {
-      deleteUser(id: $id)
-    }`;
-  const headers = getAuthHeader(token);
-  return makeReq(query, { id }, headers);
+  return makeReq(queries.deleteUser, { id }, getAuthHeader(token));
 }
 
 function getAuthHeader(token) {
@@ -63,6 +52,8 @@ module.exports = {
   createUser,
   deleteUser,
   signIn,
+  createMessage,
+  deleteMessage,
   getAuthHeader,
   request: makeReq
 };

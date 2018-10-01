@@ -1,5 +1,13 @@
 const { expect } = require('chai');
-const { request, createUser, deleteUser, getAuthHeader } = require('./helpers');
+const {
+  request,
+  createMessage,
+  deleteMessage,
+  createUser,
+  deleteUser,
+  getAuthHeader
+} = require('./helpers');
+const queries = require('../../common/queries');
 
 const messageOne = {
   text: 'Hur fan skarom stoppa oss nuuuu?'
@@ -15,64 +23,77 @@ describe('messages', () => {
     user = { id: data.createUser.id };
   });
 
-  after(() => deleteUser(user.id, token));
+  after(async () => {
+    await deleteUser(user.id, token);
+    await deleteMessage(messageOne.id, token);
+  });
 
   describe('createMessage', () => {
     it('should create a new message and tie it to a user', async () => {
-      const query = `
-        mutation ($text: String!, $userId: ID!, $inResponseTo: ID) {
-          createMessage(text: $text, userId: $userId, inResponseTo: $inResponseTo) {
-            id
-            text
-          }
-        }`;
-      const variables = { ...messageOne, userId: user.id };
-      const headers = getAuthHeader(token);
+      const { data, errors } = await createMessage({ ...messageOne, userId: user.id }, token);
 
-      const resp = await request(query, variables, headers);
-      expect(resp.errors).to.be.undefined;
-      expect(resp.data.createMessage).to.have.property('id').that.is.a('string');
-      expect(resp.data.createMessage).to.have.property('text', messageOne.text);
-      messageOne.id = resp.data.createMessage.id;
+      expect(errors).to.be.undefined;
+      expect(data.createMessage).to.have.property('id').that.is.a('string');
+      expect(data.createMessage).to.have.property('text', messageOne.text);
+      messageOne.id = data.createMessage.id;
     });
   });
 
-  describe.skip('getMessage', () => {
+  describe('getMessage', () => {
     it('should return one message', async () => {
-      const query = `
-        query ($id: ID!) {
-          message(id: $id) {
-            id
-          }
-        }`;
-      const resp = await request(query, { id: messageOne.id });
-      expect(resp.errors).to.be.undefined;
-      expect(resp.data.user).to.be.an('object');
-      expect(resp.data.user).to.have.property('id', userOne.id);
+      const { data, errors } = await request(queries.message, { id: messageOne.id });
+
+      expect(errors).to.be.undefined;
+      expect(data.message).to.be.an('object');
+      expect(data.message).to.have.property('id', messageOne.id);
     });
   });
 
-  describe.skip('getUsers', () => {
+  describe('getMessages', () => {
+    const responseMsg = { text: 'ett svar' };
+
+    before(async () => {
+      const { data } = await createMessage({
+        ...responseMsg,
+        userId: user.id,
+        inResponseTo: messageOne.id
+      }, token);
+      responseMsg.id = data.createMessage.id;
+    });
+
+    after(() => deleteMessage(responseMsg.id, token));
+
+    it('should return all messages (with responses)', async () => {
+      const { data, errors } = await request(queries.messages);
+
+      expect(errors).to.be.undefined;
+      expect(data.messages).to.be.an('array');
+      const msg = data.messages.find(({ id }) => id === messageOne.id);
+      expect(msg).to.have.property('responses').that.is.an('array');
+      expect(msg.responses[0]).to.have.property('id', responseMsg.id);
+    });
+  });
+
+  describe('updateMessage', () => {
     it('should return list of users', async () => {
-      const query = `{ users { id } }`;
-      const resp = await request(query);
-      expect(resp.errors).to.be.undefined;
-      expect(resp.data.users).to.be.an('array');
-      const match = resp.data.users.find(({ id }) => id === userOne.id);
-      expect(match).to.eql({ id: userOne.id });
+      const text = 'some updated text';
+      const variables = { id: messageOne.id, text };
+      const headers = getAuthHeader(token);
+      const { data, errors } = await request(queries.updateMessage, variables, headers);
+
+      expect(errors).to.be.undefined;
+      expect(data.updateMessage).to.be.an('object');
+      expect(data.updateMessage).to.have.property('text', text);
     });
   });
 
-  describe.skip('deleteUser', () => {
-    it('should delete user and return true', async () => {
-      const query = `
-      mutation ($id: ID!) {
-        deleteUser(id: $id)
-      }`;
-      const headers = { authorization: `Bearer ${token}` };
-      const resp = await request(query, { id: userOne.id }, headers);
-      expect(resp.errors).to.be.undefined;
-      expect(resp.data.deleteUser).to.be.true
+  describe('deleteMessage', () => {
+    it('should delete message and return true', async () => {
+      const { data, errors } = await deleteMessage(messageOne.id, token);
+
+      if (errors) console.log(errors);
+      expect(errors).to.be.undefined;
+      expect(data.deleteMessage).to.be.true
     });
   });
 });

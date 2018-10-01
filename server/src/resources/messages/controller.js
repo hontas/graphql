@@ -25,9 +25,7 @@ function updateMessage(id, text) {
 }
 
 function deleteMessage(id) {
-  const { [id]: message, ...otherMessages } = messages;
-  if (!message) return false;
-  messages = otherMessages;
+  delete messages[id];
   return true;
 }
 
