@@ -1,7 +1,16 @@
-import { UserInputError } from "apollo-server-express";
+import { UserInputError, ForbiddenError } from "apollo-server-express";
+import { combineResolvers } from 'graphql-resolvers';
 
+import { isAuthenticated } from '../../lib/auth';
 import messages from "./controller";
 import users from "../users/controller";
+
+async function isOwner(parent, { id }, { user }) {
+  const { userId } = await messages.getMessage(id);
+  if (userId !== user.id) {
+    throw new ForbiddenError('Not authenticated as owner');
+  }
+}
 
 export default {
   Query: {
@@ -10,26 +19,39 @@ export default {
   },
 
   Mutation: {
-    createMessage(parent, { text, userId, inResponseTo }) {
-      if (!userId || !users.getUser(userId)) {
-        throw new UserInputError("No user specified", { invalidArgs: "userId" });
+    createMessage: combineResolvers(
+      isAuthenticated,
+      (parent, { text, userId, inResponseTo }) => {
+        if (!userId || !users.getUser(userId)) {
+          throw new UserInputError("No user specified", { invalidArgs: "userId" });
+        }
+        const newMessage = messages.createMessage({ text, userId, inResponseTo });
+        users.createdMessage({ userId, messageId: newMessage.id });
+        return newMessage;
       }
-      const newMessage = messages.createMessage({ text, userId, inResponseTo });
-      users.createdMessage({ userId, messageId: newMessage.id });
-      return newMessage;
-    },
-    updateMessage(parent, { id, text }) {
-      if (!messages.getMessage(id)) {
-        throw new UserInputError("404 not found", { invalidArgs: "id" });
-      } else {
-        return messages.updateMessage(id, text);
+    ),
+
+    updateMessage: combineResolvers(
+      isAuthenticated,
+      isOwner,
+      (parent, { id, text }) => {
+        if (!messages.getMessage(id)) {
+          throw new UserInputError("404 not found", { invalidArgs: "id" });
+        } else {
+          return messages.updateMessage(id, text);
+        }
       }
-    },
-    deleteMessage(parent, { id }) {
-      if (!messages.getMessage(id)) return true;
-      const { userId } = messages.getMessage(id);
-      return messages.deleteMessage(id) && users.deletedMessage({ userId, messageId: id });
-    }
+    ),
+
+    deleteMessage: combineResolvers(
+      isAuthenticated,
+      isOwner,
+      (parent, { id }) => {
+        if (!messages.getMessage(id)) return true;
+        const { userId } = messages.getMessage(id);
+        return messages.deleteMessage(id) && users.deletedMessage({ userId, messageId: id });
+      }
+    )
   },
 
   Message: {

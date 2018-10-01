@@ -33,6 +33,16 @@ function getUser(id) {
   } : null;
 }
 
+function getUserBy(props) {
+  const entries = Object.entries(props);
+
+  const match = Object.entries(users).find(([_, user]) => {
+    return entries.every(([key, val]) => user[key] === val);
+  });
+
+  return match ? getUser(match[0]) : null;
+}
+
 function getUsers() {
   return Object.entries(users).map(([id, user]) => ({
     id,
@@ -40,10 +50,17 @@ function getUsers() {
   }));
 }
 
+function deleteUser(id) {
+  delete users[id];
+  return true;
+}
+
 export default {
   createUser,
+  deleteUser,
   getUser,
   getUsers,
+  getUserBy,
   createdMessage,
   deletedMessage
 };

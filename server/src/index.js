@@ -6,6 +6,7 @@ import { ApolloServer } from "apollo-server-express";
 import schema from "./schema";
 import resolvers from "./resolvers";
 import generateData from "./resources/generateData";
+import { getUserFromToken } from './lib/auth';
 
 generateData();
 
@@ -15,7 +16,11 @@ app.use(cors());
 
 const server = new ApolloServer({
   typeDefs: schema,
-  resolvers
+  resolvers,
+  context: async ({ req }) => {
+    const user = await getUserFromToken(req);
+    return { user };
+  }
 });
 
 server.applyMiddleware({ app, path: "/graphql" });
