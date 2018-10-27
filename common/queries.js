@@ -11,6 +11,9 @@ module.exports = {
     query ($id: ID!) {
       user(id: $id) {
         id
+        messages {
+          id
+        }
       }
     }
   `,

@@ -36,6 +36,10 @@ describe('messages', () => {
       expect(data.createMessage).to.have.property('id').that.is.a('string');
       expect(data.createMessage).to.have.property('text', messageOne.text);
       messageOne.id = data.createMessage.id;
+
+      const res = await request(queries.user, { id: user.id });
+      expect(res.data.user).to.have.property('messages').that.has.length(1);
+      expect(res.data.user.messages[0]).to.have.property('id', messageOne.id);
     });
   });
 
@@ -88,12 +92,15 @@ describe('messages', () => {
   });
 
   describe('deleteMessage', () => {
-    it('should delete message and return true', async () => {
+    it('should delete message and references', async () => {
       const { data, errors } = await deleteMessage(messageOne.id, token);
 
       if (errors) console.log(errors);
       expect(errors).to.be.undefined;
-      expect(data.deleteMessage).to.be.true
+      expect(data.deleteMessage).to.be.true;
+
+      const res = await request(queries.user, { id: user.id });
+      expect(res.data.user).to.have.property('messages').that.is.empty;
     });
   });
 });
